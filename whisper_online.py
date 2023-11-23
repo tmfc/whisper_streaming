@@ -6,16 +6,17 @@ from functools import lru_cache
 import time
 
 
+SAMPLING_RATE = 16000
 @lru_cache
 def load_audio(fname):
-    a, _ = librosa.load(fname, sr=16000)
+    a, _ = librosa.load(fname, sr=SAMPLING_RATE)
     return a
 
 
 def load_audio_chunk(fname, beg, end):
     audio = load_audio(fname)
-    beg_s = int(beg * 16000)
-    end_s = int(end * 16000)
+    beg_s = int(beg * SAMPLING_RATE)
+    end_s = int(end * SAMPLING_RATE)
     return audio[beg_s:end_s]
 
 
@@ -105,7 +106,7 @@ class FasterWhisperASR(ASRBase):
             raise ValueError("model_size or model_dir parameter must be set")
 
         # this worked fast and reliably on NVIDIA L40
-        model = WhisperModel(model_size_or_path, device="cuda", compute_type="float16", download_root=cache_dir)
+        # model = WhisperModel(model_size_or_path, device="cuda", compute_type="float16", download_root=cache_dir)
 
         # or run on GPU with INT8
         # tested: the transcripts were different, probably worse than with FP16, and it was slightly (appx 20%) slower
@@ -113,7 +114,7 @@ class FasterWhisperASR(ASRBase):
 
         # or run on CPU with INT8
         # tested: works, but slow, appx 10-times than cuda FP16
-        # model = WhisperModel(model_size, device="cpu", compute_type="int8") #, download_root="faster-disk-cache-dir/")
+        model = WhisperModel(model_size, device="cpu", compute_type="int8") #, download_root="faster-disk-cache-dir/")
         return model
 
     def transcribe(self, audio, init_prompt=""):
@@ -502,7 +503,6 @@ if __name__ == "__main__":
 
     audio_path = args.audio_path
 
-    SAMPLING_RATE = 16000
     duration = len(load_audio(audio_path)) / SAMPLING_RATE
     print("Audio duration is: %2.2f seconds" % duration, file=sys.stderr)
 
